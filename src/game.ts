@@ -4,8 +4,7 @@ import { InputHandler, Direction } from './input';
 import { Renderer } from './renderer';
 
 const GRID_SIZE = 100;
-const MOVE_INTERVAL_TRAVERSE = 50; // ms between moves in traverse mode
-const MOVE_INTERVAL_DRAW = 30; // ms between moves while drawing
+const MOVE_INTERVAL = 30; // ms between moves (same for both modes)
 const TARGET_COVERAGE = 75;
 
 export class Game {
@@ -43,7 +42,7 @@ export class Game {
   };
 
   update(timestamp: number): void {
-    const interval = this.player.mode === 'draw' ? MOVE_INTERVAL_DRAW : MOVE_INTERVAL_TRAVERSE;
+    const interval = MOVE_INTERVAL;
 
     if (timestamp - this.lastMoveTime < interval) {
       return;

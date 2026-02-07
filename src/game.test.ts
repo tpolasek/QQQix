@@ -29,7 +29,7 @@ describe('Game Integration Test - No Mocking', () => {
 
   it('should reach ~50% coverage when player goes up from center', () => {
     const startTime = 0;
-    const timeStep = 50;
+    const timeStep = 30;
 
     // Simulate pressing ArrowUp
     game.simulateKeyPress('ArrowUp', true);
@@ -83,7 +83,7 @@ describe('Game Integration Test - No Mocking', () => {
 
   it('should increment level when coverage exceeds 75%', () => {
     const startTime = 0;
-    const timeStep = 50;
+    const timeStep = 30;
 
     // Phase 1: First capture - go up from center to get ~50%
     game.simulateKeyPress('ArrowUp', true);
@@ -193,7 +193,7 @@ describe('Game Integration Test - No Mocking', () => {
 
   it('should NOT increment level when coverage stays below 75%', () => {
     const startTime = 0;
-    const timeStep = 50;
+    const timeStep = 30;
 
     // Simulate pressing ArrowUp
     game.simulateKeyPress('ArrowUp', true);
@@ -242,7 +242,7 @@ describe('Game Integration Test - No Mocking', () => {
   // because the line path is cleared before captureTerritory is called.
   it('BUG: coverage should increase when player completes a shape by going up', () => {
     const startTime = 0;
-    const timeStep = 50;
+    const timeStep = 30;
 
     // Initial state - just border cells, ~4% coverage
     const initialCoverage = game.getCoverage();

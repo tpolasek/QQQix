@@ -1,5 +1,5 @@
 import { Grid } from './grid';
-import { Direction } from './input';
+import { Direction, InputHandler } from './input';
 
 export type { Direction };
 
@@ -34,34 +34,36 @@ export interface MoveResult {
   moved: boolean;
   completedShape: boolean;
   gameOver: boolean;
+  died: boolean;
   capturedPath?: Array<{ x: number; y: number }>;
 }
 
 export function movePlayer(
   player: Player,
   grid: Grid,
-  direction: Direction
+  direction: Direction,
+  inputHandler: InputHandler
 ): MoveResult {
   const newX = player.x + getDX(direction);
   const newY = player.y + getDY(direction);
 
   // Check bounds
   if (newX < 0 || newX >= grid.getWidth() || newY < 0 || newY >= grid.getHeight()) {
-    return { moved: false, completedShape: false, gameOver: false };
+    return { moved: false, completedShape: false, gameOver: false, died: false };
   }
 
   const targetCell = grid.getCell(newX, newY);
 
   // Can't reverse direction while drawing
   if (player.mode === PlayerMode.DRAW && isOppositeDirection(player.direction, direction)) {
-    return { moved: false, completedShape: false, gameOver: false };
+    return { moved: false, completedShape: false, gameOver: false, died: false };
   }
 
   player.direction = direction;
 
-  // Check if hitting own line (game over)
+  // Check if hitting own line (lose a life)
   if (player.mode === PlayerMode.DRAW && grid.isOnLine(newX, newY, player.linePath)) {
-    return { moved: false, completedShape: false, gameOver: true };
+    return { moved: false, completedShape: false, gameOver: false, died: true };
   }
 
   if (player.mode === PlayerMode.TRAVERSE) {
@@ -69,16 +71,20 @@ export function movePlayer(
     if (grid.isTraversable(newX, newY)) {
       player.x = newX;
       player.y = newY;
-      return { moved: true, completedShape: false, gameOver: false };
+      return { moved: true, completedShape: false, gameOver: false, died: false };
     }
-    // Try to enter DRAW mode
+    // Try to enter DRAW mode - requires SPACE to be held
     else if (grid.isEmpty(newX, newY)) {
+      if (!inputHandler.isSpacePressed()) {
+        // SPACE not held - cannot enter DRAW mode
+        return { moved: false, completedShape: false, gameOver: false, died: false };
+      }
       player.mode = PlayerMode.DRAW;
       player.x = newX;
       player.y = newY;
       player.linePath = [{ x: newX, y: newY }];
       grid.setLine(newX, newY);
-      return { moved: true, completedShape: false, gameOver: false };
+      return { moved: true, completedShape: false, gameOver: false, died: false };
     }
   } else if (player.mode === PlayerMode.DRAW) {
     // In draw mode, can move through empty space
@@ -87,10 +93,10 @@ export function movePlayer(
       player.y = newY;
       player.linePath.push({ x: newX, y: newY });
       grid.setLine(newX, newY);
-      return { moved: true, completedShape: false, gameOver: false };
+      return { moved: true, completedShape: false, gameOver: false, died: false };
     }
-    // Complete shape when reaching traversable cell
-    else if (grid.isTraversable(newX, newY)) {
+    // Complete shape when reaching a FILLED or BORDER cell
+    else if (grid.canCompleteShape(newX, newY)) {
       player.x = newX;
       player.y = newY;
       player.mode = PlayerMode.TRAVERSE;
@@ -98,11 +104,11 @@ export function movePlayer(
       // Capture the path before clearing it for territory capture
       const capturedPath = [...player.linePath];
       player.linePath = [];
-      return { moved: true, completedShape: completed, gameOver: false, capturedPath };
+      return { moved: true, completedShape: completed, gameOver: false, died: false, capturedPath };
     }
   }
 
-  return { moved: false, completedShape: false, gameOver: false };
+  return { moved: false, completedShape: false, gameOver: false, died: false };
 }
 
 function getDX(direction: Direction): number {

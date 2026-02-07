@@ -68,15 +68,19 @@ export class Renderer {
     ctx.shadowBlur = 0;
   }
 
-  updateUI(coverage: number, level: number): void {
+  updateUI(coverage: number, level: number, lives: number): void {
     const percentEl = document.getElementById('percent');
     const levelEl = document.getElementById('level');
+    const livesEl = document.getElementById('lives');
 
     if (percentEl) {
       percentEl.textContent = `${coverage.toFixed(1)}%`;
     }
     if (levelEl) {
       levelEl.textContent = level.toString();
+    }
+    if (livesEl) {
+      livesEl.textContent = lives.toString();
     }
   }
 }

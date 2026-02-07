@@ -63,9 +63,46 @@ export class Grid {
     return this.getCell(x, y) === CellType.EMPTY;
   }
 
-  isTraversable(x: number, y: number): boolean {
+  // Check if a cell can be used to complete a shape (from DRAW mode)
+  // Any FILLED or BORDER cell can complete a shape
+  canCompleteShape(x: number, y: number): boolean {
     const cell = this.getCell(x, y);
     return cell === CellType.FILLED || cell === CellType.BORDER;
+  }
+
+  isTraversable(x: number, y: number): boolean {
+    const cell = this.getCell(x, y);
+
+    // Border cells are always traversable
+    if (cell === CellType.BORDER) {
+      return true;
+    }
+
+    // Filled cells are only traversable if they're on the edge (have at least one empty neighbor)
+    if (cell === CellType.FILLED) {
+      return this.hasEmptyNeighbor(x, y);
+    }
+
+    return false;
+  }
+
+  // Check if a cell has at least one empty neighbor
+  private hasEmptyNeighbor(x: number, y: number): boolean {
+    const neighbors = [
+      { dx: 0, dy: -1 }, // up
+      { dx: 0, dy: 1 },  // down
+      { dx: -1, dy: 0 }, // left
+      { dx: 1, dy: 0 }   // right
+    ];
+
+    for (const { dx, dy } of neighbors) {
+      const nx = x + dx;
+      const ny = y + dy;
+      if (this.isEmpty(nx, ny)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   setLine(x: number, y: number): void {

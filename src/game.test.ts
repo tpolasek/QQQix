@@ -31,8 +31,9 @@ describe('Game Integration Test - No Mocking', () => {
     const startTime = 0;
     const timeStep = 30;
 
-    // Simulate pressing ArrowUp
+    // Simulate pressing ArrowUp and SPACE (required to enter DRAW mode)
     game.simulateKeyPress('ArrowUp', true);
+    game.simulateKeyPress(' ', true);
 
     // Player starts at bottom center (x=50, y=99 in a 100x100 grid)
     // Going straight up will reach the top border at y=0-1
@@ -58,8 +59,9 @@ describe('Game Integration Test - No Mocking', () => {
       }
     }
 
-    // Release ArrowUp
+    // Release ArrowUp and SPACE
     game.simulateKeyPress('ArrowUp', false);
+    game.simulateKeyPress(' ', false);
 
     expect(shapeCompleted, 'Shape should be completed').toBe(true);
 
@@ -87,6 +89,7 @@ describe('Game Integration Test - No Mocking', () => {
 
     // Phase 1: First capture - go up from center to get ~50%
     game.simulateKeyPress('ArrowUp', true);
+    game.simulateKeyPress(' ', true);
 
     let currentTime = startTime;
     let firstCaptureDone = false;
@@ -109,8 +112,9 @@ describe('Game Integration Test - No Mocking', () => {
 
     expect(firstCaptureDone, 'First capture should complete').toBe(true);
 
-    // Release ArrowUp
+    // Release ArrowUp and SPACE
     game.simulateKeyPress('ArrowUp', false);
+    game.simulateKeyPress(' ', false);
 
     const afterFirstCoverage = game.getCoverage();
     expect(afterFirstCoverage).toBeGreaterThan(40);
@@ -156,6 +160,7 @@ describe('Game Integration Test - No Mocking', () => {
 
     // Phase 4: Go DOWN from this position - should enter DRAW mode and capture territory
     game.simulateKeyPress('ArrowDown', true);
+    game.simulateKeyPress(' ', true);
 
     let secondCaptureDone = false;
     while (!secondCaptureDone && iterations < maxIterations && currentTime < 28000) {
@@ -174,6 +179,7 @@ describe('Game Integration Test - No Mocking', () => {
     }
 
     game.simulateKeyPress('ArrowDown', false);
+    game.simulateKeyPress(' ', false);
 
     const finalCoverage = game.getCoverage();
     const finalLevel = game.getLevel();
@@ -195,8 +201,9 @@ describe('Game Integration Test - No Mocking', () => {
     const startTime = 0;
     const timeStep = 30;
 
-    // Simulate pressing ArrowUp
+    // Simulate pressing ArrowUp and SPACE
     game.simulateKeyPress('ArrowUp', true);
+    game.simulateKeyPress(' ', true);
 
     let currentTime = startTime;
     let shapeCompleted = false;
@@ -224,8 +231,9 @@ describe('Game Integration Test - No Mocking', () => {
       }
     }
 
-    // Release ArrowUp
+    // Release ArrowUp and SPACE
     game.simulateKeyPress('ArrowUp', false);
+    game.simulateKeyPress(' ', false);
 
     const finalCoverage = game.getCoverage();
     const finalLevel = game.getLevel();
@@ -251,8 +259,9 @@ describe('Game Integration Test - No Mocking', () => {
     expect(initialCoverage).toBeLessThan(10);
     expect(initialLevel).toBe(1);
 
-    // Simulate pressing ArrowUp - player goes from bottom to top
+    // Simulate pressing ArrowUp and SPACE - player goes from bottom to top
     game.simulateKeyPress('ArrowUp', true);
+    game.simulateKeyPress(' ', true);
 
     let currentTime = startTime;
     let iterations = 0;
@@ -299,6 +308,7 @@ describe('Game Integration Test - No Mocking', () => {
 
     // Final verification
     game.simulateKeyPress('ArrowUp', false);
+    game.simulateKeyPress(' ', false);
 
     const finalCoverage = game.getCoverage();
     const finalLevel = game.getLevel();

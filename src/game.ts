@@ -6,6 +6,7 @@ import { Renderer } from './renderer';
 const GRID_SIZE = 100;
 const MOVE_INTERVAL = 30; // ms between moves (same for both modes)
 const TARGET_COVERAGE = 75;
+const STARTING_LIVES = 3;
 
 export class Game {
   private grid: Grid;
@@ -13,6 +14,7 @@ export class Game {
   private inputHandler: InputHandler;
   private renderer: Renderer;
   private level: number = 1;
+  private lives: number = STARTING_LIVES;
   private lastMoveTime: number = 0;
   private gameOver: boolean = false;
   private animationId: number | null = null;
@@ -23,7 +25,7 @@ export class Game {
     this.inputHandler = new InputHandler();
     this.renderer = new Renderer(canvas, this.grid);
 
-    this.renderer.updateUI(this.grid.getCoverage(), this.level);
+    this.renderer.updateUI(this.grid.getCoverage(), this.level, this.lives);
   }
 
   start(): void {
@@ -57,7 +59,12 @@ export class Game {
     }
 
     // Move player
-    const result = movePlayer(this.player, this.grid, direction);
+    const result = movePlayer(this.player, this.grid, direction, this.inputHandler);
+
+    if (result.died) {
+      this.handleDeath();
+      return;
+    }
 
     if (result.gameOver) {
       this.handleGameOver();
@@ -70,7 +77,7 @@ export class Game {
     }
 
     // Update UI
-    this.renderer.updateUI(this.grid.getCoverage(), this.level);
+    this.renderer.updateUI(this.grid.getCoverage(), this.level, this.lives);
 
     // Check for level complete
     if (this.grid.getCoverage() >= TARGET_COVERAGE) {
@@ -91,7 +98,25 @@ export class Game {
     this.player = createPlayer(this.grid);
 
     // Flash effect or delay could go here
-    this.renderer.updateUI(this.grid.getCoverage(), this.level);
+    this.renderer.updateUI(this.grid.getCoverage(), this.level, this.lives);
+  }
+
+  private handleDeath(): void {
+    this.lives--;
+
+    if (this.lives <= 0) {
+      this.handleGameOver();
+      return;
+    }
+
+    // Clear any drawn lines
+    this.grid.clearLines();
+
+    // Reset player to starting position (bottom center)
+    this.player = createPlayer(this.grid);
+
+    // Update UI
+    this.renderer.updateUI(this.grid.getCoverage(), this.level, this.lives);
   }
 
   private handleGameOver(): void {
@@ -140,6 +165,10 @@ export class Game {
 
   getCoverage(): number {
     return this.grid.getCoverage();
+  }
+
+  getLives(): number {
+    return this.lives;
   }
 
   isGameOver(): boolean {

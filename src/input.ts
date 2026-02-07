@@ -76,6 +76,11 @@ export class InputHandler {
     return null;
   }
 
+  // Check if SPACE is pressed (required to enter DRAW mode)
+  isSpacePressed(): boolean {
+    return this.keyState.get(' ') === true;
+  }
+
   // Test helper: simulate a key press (for testing without actual DOM events)
   simulateKeyPress(key: string, pressed: boolean): void {
     this.keyState.set(key, pressed);

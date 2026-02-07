@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qix-Style Territory Capture</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      color: #eee;
+    }
+
+    #ui {
+      display: flex;
+      gap: 40px;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+
+    #ui span {
+      background: #16213e;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 2px solid #0f3460;
+    }
+
+    #ui span b {
+      color: #e94560;
+    }
+
+    #gameCanvas {
+      border: 4px solid #0f3460;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(233, 69, 96, 0.3);
+    }
+
+    #instructions {
+      margin-top: 20px;
+      text-align: center;
+      color: #888;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <span>Coverage: <b id="percent">0%</b></span>
+    <span>Level: <b id="level">1</b></span>
+    <span>Target: 75%</span>
+  </div>
+  <canvas id="gameCanvas"></canvas>
+  <div id="instructions">
+    Use Arrow Keys to move • Draw lines to capture territory • Reach 75% to advance
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

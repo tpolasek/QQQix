@@ -244,6 +244,56 @@ describe('Game Integration Test - No Mocking', () => {
     expect(finalLevel, 'Level should still be 1').toBe(1);
   });
 
+  it('should lose a life when colliding with own line during DRAW mode', () => {
+    const timeStep = 30;
+    let currentTime = 0;
+
+    const step = (count: number) => {
+      for (let i = 0; i < count; i++) {
+        currentTime += timeStep;
+        game.update(currentTime);
+      }
+    };
+
+    const initialLives = game.getLives();
+    expect(initialLives).toBe(3);
+
+    // Enter DRAW mode and draw a short vertical segment from bottom border.
+    game.simulateKeyPress(' ', true);
+    game.simulateKeyPress('ArrowUp', true);
+    step(3);
+
+    expect(game.getPlayer().mode, 'Player should be in DRAW mode').toBe(PlayerMode.DRAW);
+
+    // Create a U-turn-like path without reversing direction:
+    // UP -> LEFT -> DOWN -> RIGHT
+    game.simulateKeyPress('ArrowUp', false);
+    game.simulateKeyPress('ArrowLeft', true);
+    step(1);
+
+    game.simulateKeyPress('ArrowLeft', false);
+    game.simulateKeyPress('ArrowDown', true);
+    step(1);
+
+    const livesBeforeCollision = game.getLives();
+
+    game.simulateKeyPress('ArrowDown', false);
+    game.simulateKeyPress('ArrowRight', true);
+    step(1); // Move into previously drawn line cell: should die.
+
+    game.simulateKeyPress('ArrowRight', false);
+    game.simulateKeyPress(' ', false);
+
+    expect(game.getLives(), 'Player should lose exactly one life').toBe(livesBeforeCollision - 1);
+    expect(game.getLives(), 'Total lives should now be 2').toBe(initialLives - 1);
+
+    // Death should reset player state/position.
+    const player = game.getPlayer();
+    expect(player.mode, 'Player should reset to TRAVERSE mode after death').toBe(PlayerMode.TRAVERSE);
+    expect(player.x, 'Player should reset to bottom-center X').toBe(50);
+    expect(player.y, 'Player should reset to bottom-center Y').toBe(99);
+  });
+
   // This is the key failing test case that captures the bug:
   // When the player goes from bottom to top (completing a shape),
   // the coverage should increase to ~50%, but currently it stays at ~4%

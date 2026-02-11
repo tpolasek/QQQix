@@ -5,7 +5,7 @@ import { Renderer } from './renderer';
 
 const GRID_SIZE = 100;
 const MOVE_INTERVAL = 30; // ms between moves (same for both modes)
-const TARGET_COVERAGE = 75;
+const DEFAULT_TARGET_COVERAGE = 75;
 const STARTING_LIVES = 3;
 
 export class Game {
@@ -18,8 +18,10 @@ export class Game {
   private lastMoveTime: number = 0;
   private gameOver: boolean = false;
   private animationId: number | null = null;
+  private targetCoverage: number;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, options: { targetCoverage?: number } = {}) {
+    this.targetCoverage = options.targetCoverage ?? DEFAULT_TARGET_COVERAGE;
     this.grid = new Grid(GRID_SIZE, GRID_SIZE);
     this.player = createPlayer(this.grid);
     this.inputHandler = new InputHandler();
@@ -80,7 +82,7 @@ export class Game {
     this.renderer.updateUI(this.grid.getCoverage(), this.level, this.lives);
 
     // Check for level complete
-    if (this.grid.getCoverage() >= TARGET_COVERAGE) {
+    if (this.grid.getCoverage() >= this.targetCoverage) {
       this.nextLevel();
     }
   }

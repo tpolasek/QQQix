@@ -11,6 +11,13 @@ export interface Point {
 }
 
 export class Grid {
+  private static readonly CARDINAL_DIRECTIONS: ReadonlyArray<Point> = [
+    { x: 0, y: -1 },
+    { x: 0, y: 1 },
+    { x: -1, y: 0 },
+    { x: 1, y: 0 },
+  ];
+
   private cells: CellType[][];
   private width: number;
   private height: number;
@@ -23,19 +30,9 @@ export class Grid {
   }
 
   private initialize(): void {
-    this.cells = [];
-    for (let y = 0; y < this.height; y++) {
-      const row: CellType[] = [];
-      for (let x = 0; x < this.width; x++) {
-        // Border cells
-        if (x === 0 || x === this.width - 1 || y === 0 || y === this.height - 1) {
-          row.push(CellType.BORDER);
-        } else {
-          row.push(CellType.EMPTY);
-        }
-      }
-      this.cells.push(row);
-    }
+    this.cells = Array.from({ length: this.height }, (_, y) =>
+      Array.from({ length: this.width }, (_, x) => (this.isBorderCell(x, y) ? CellType.BORDER : CellType.EMPTY)),
+    );
   }
 
   getWidth(): number {
@@ -47,14 +44,14 @@ export class Grid {
   }
 
   getCell(x: number, y: number): CellType {
-    if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
+    if (!this.isInBounds(x, y)) {
       return CellType.BORDER; // Treat out of bounds as border
     }
     return this.cells[y][x];
   }
 
   setCell(x: number, y: number, type: CellType): void {
-    if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
+    if (this.isInBounds(x, y)) {
       this.cells[y][x] = type;
     }
   }
@@ -66,44 +63,26 @@ export class Grid {
   // Check if a cell can be used to complete a shape (from DRAW mode)
   // Any FILLED, BORDER, or LINE cell can complete a shape
   canCompleteShape(x: number, y: number): boolean {
-    const cell = this.getCell(x, y);
-    return cell === CellType.FILLED || cell === CellType.BORDER || cell === CellType.LINE;
+    return this.getCell(x, y) !== CellType.EMPTY;
   }
 
   isTraversable(x: number, y: number): boolean {
-    const cell = this.getCell(x, y);
-
-    // Border cells are always traversable
-    if (cell === CellType.BORDER) {
-      return true;
+    switch (this.getCell(x, y)) {
+      case CellType.BORDER:
+      case CellType.LINE:
+        return true;
+      case CellType.FILLED:
+        // Filled cells are traversable only when on the frontier.
+        return this.hasEmptyNeighbor(x, y);
+      default:
+        return false;
     }
-
-    // Line cells are always traversable (the paths we draw become permanent walkways)
-    if (cell === CellType.LINE) {
-      return true;
-    }
-
-    // Filled cells are only traversable if they're on the edge (have at least one empty neighbor)
-    if (cell === CellType.FILLED) {
-      return this.hasEmptyNeighbor(x, y);
-    }
-
-    return false;
   }
 
   // Check if a cell has at least one empty neighbor
   private hasEmptyNeighbor(x: number, y: number): boolean {
-    const neighbors = [
-      { dx: 0, dy: -1 }, // up
-      { dx: 0, dy: 1 }, // down
-      { dx: -1, dy: 0 }, // left
-      { dx: 1, dy: 0 }, // right
-    ];
-
-    for (const { dx, dy } of neighbors) {
-      const nx = x + dx;
-      const ny = y + dy;
-      if (this.isEmpty(nx, ny)) {
+    for (const direction of Grid.CARDINAL_DIRECTIONS) {
+      if (this.isEmpty(x + direction.x, y + direction.y)) {
         return true;
       }
     }
@@ -116,40 +95,24 @@ export class Grid {
 
   // Clear all temporary lines
   clearLines(): void {
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
-        if (this.cells[y][x] === CellType.LINE) {
-          this.cells[y][x] = CellType.EMPTY;
-        }
-      }
-    }
+    this.replaceCells(CellType.LINE, CellType.EMPTY);
   }
 
   // Convert all lines to filled
   convertLinesToFilled(): void {
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
-        if (this.cells[y][x] === CellType.LINE) {
-          this.cells[y][x] = CellType.FILLED;
-        }
-      }
-    }
+    this.replaceCells(CellType.LINE, CellType.FILLED);
   }
 
   // Calculate coverage percentage
   getCoverage(): number {
+    const totalCount = this.width * this.height;
     let filledCount = 0;
-    let totalCount = 0;
 
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
-        const cell = this.cells[y][x];
-        if (cell === CellType.FILLED || cell === CellType.BORDER || cell === CellType.LINE) {
-          filledCount++;
-        }
-        totalCount++;
+    this.forEachCell((cell) => {
+      if (cell !== CellType.EMPTY) {
+        filledCount++;
       }
-    }
+    });
 
     return (filledCount / totalCount) * 100;
   }
@@ -175,8 +138,7 @@ export class Grid {
 
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
-        const key = `${x},${y}`;
-        if (gridCopy[y][x] === CellType.EMPTY && !visited.has(key)) {
+        if (gridCopy[y][x] === CellType.EMPTY && !visited.has(this.makeKey(x, y))) {
           const region = this.floodFill(gridCopy, x, y, visited);
           if (region.length > 0) {
             regions.push(region);
@@ -213,10 +175,10 @@ export class Grid {
 
     while (stack.length > 0) {
       const { x, y } = stack.pop()!;
-      const key = `${x},${y}`;
+      const key = this.makeKey(x, y);
 
       if (visited.has(key)) continue;
-      if (x < 0 || x >= this.width || y < 0 || y >= this.height) continue;
+      if (!this.isInBounds(x, y)) continue;
       if (grid[y][x] !== CellType.EMPTY) continue;
 
       visited.add(key);
@@ -235,5 +197,33 @@ export class Grid {
   // Check if a point is on the current line being drawn
   isOnLine(x: number, y: number, linePath: Point[]): boolean {
     return linePath.some((p) => p.x === x && p.y === y);
+  }
+
+  private isInBounds(x: number, y: number): boolean {
+    return x >= 0 && x < this.width && y >= 0 && y < this.height;
+  }
+
+  private isBorderCell(x: number, y: number): boolean {
+    return x === 0 || x === this.width - 1 || y === 0 || y === this.height - 1;
+  }
+
+  private forEachCell(visitor: (cell: CellType, x: number, y: number) => void): void {
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        visitor(this.cells[y][x], x, y);
+      }
+    }
+  }
+
+  private replaceCells(from: CellType, to: CellType): void {
+    this.forEachCell((cell, x, y) => {
+      if (cell === from) {
+        this.cells[y][x] = to;
+      }
+    });
+  }
+
+  private makeKey(x: number, y: number): string {
+    return `${x},${y}`;
   }
 }

@@ -1,4 +1,4 @@
-import { Grid } from './grid';
+import { Grid, CellType } from './grid';
 import { Player, createPlayer, movePlayer } from './player';
 import { InputHandler, Direction } from './input';
 import { Renderer } from './renderer';
@@ -109,8 +109,10 @@ export class Game {
       return;
     }
 
-    // Clear any drawn lines
-    this.grid.clearLines();
+    // Clear only the incomplete line the player was currently drawing
+    for (const point of this.player.linePath) {
+      this.grid.setCell(point.x, point.y, CellType.EMPTY);
+    }
 
     // Reset player to starting position (bottom center)
     this.player = createPlayer(this.grid);

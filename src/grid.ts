@@ -2,7 +2,7 @@ export enum CellType {
   EMPTY = 0,
   FILLED = 1,
   BORDER = 2,
-  LINE = 3
+  LINE = 3,
 }
 
 export interface Point {
@@ -64,10 +64,10 @@ export class Grid {
   }
 
   // Check if a cell can be used to complete a shape (from DRAW mode)
-  // Any FILLED or BORDER cell can complete a shape
+  // Any FILLED, BORDER, or LINE cell can complete a shape
   canCompleteShape(x: number, y: number): boolean {
     const cell = this.getCell(x, y);
-    return cell === CellType.FILLED || cell === CellType.BORDER;
+    return cell === CellType.FILLED || cell === CellType.BORDER || cell === CellType.LINE;
   }
 
   isTraversable(x: number, y: number): boolean {
@@ -75,6 +75,11 @@ export class Grid {
 
     // Border cells are always traversable
     if (cell === CellType.BORDER) {
+      return true;
+    }
+
+    // Line cells are always traversable (the paths we draw become permanent walkways)
+    if (cell === CellType.LINE) {
       return true;
     }
 
@@ -90,9 +95,9 @@ export class Grid {
   private hasEmptyNeighbor(x: number, y: number): boolean {
     const neighbors = [
       { dx: 0, dy: -1 }, // up
-      { dx: 0, dy: 1 },  // down
+      { dx: 0, dy: 1 }, // down
       { dx: -1, dy: 0 }, // left
-      { dx: 1, dy: 0 }   // right
+      { dx: 1, dy: 0 }, // right
     ];
 
     for (const { dx, dy } of neighbors) {
@@ -139,7 +144,7 @@ export class Grid {
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         const cell = this.cells[y][x];
-        if (cell === CellType.FILLED || cell === CellType.BORDER) {
+        if (cell === CellType.FILLED || cell === CellType.BORDER || cell === CellType.LINE) {
           filledCount++;
         }
         totalCount++;
@@ -157,7 +162,7 @@ export class Grid {
     }
 
     // Create a copy of the grid for simulation
-    const gridCopy = this.cells.map(row => [...row]);
+    const gridCopy = this.cells.map((row) => [...row]);
 
     // Mark lines as FILLED in the copy
     for (const p of linePath) {
@@ -197,8 +202,9 @@ export class Grid {
       }
     }
 
-    // Convert the line to filled
-    this.convertLinesToFilled();
+    // Keep the line as LINE (don't convert to FILLED)
+    // Lines remain as permanent traversable paths
+    // this.convertLinesToFilled();
   }
 
   private floodFill(grid: CellType[][], startX: number, startY: number, visited: Set<string>): Point[] {
@@ -228,6 +234,6 @@ export class Grid {
 
   // Check if a point is on the current line being drawn
   isOnLine(x: number, y: number, linePath: Point[]): boolean {
-    return linePath.some(p => p.x === x && p.y === y);
+    return linePath.some((p) => p.x === x && p.y === y);
   }
 }
